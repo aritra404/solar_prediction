@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictable Power | Solar Forecaster</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+</head>
+<body class="editorial-theme">
+
+    <!-- Interactive Cursor Glow -->
+    <div class="cursor-glow" id="cursor-glow"></div>
+
+    <!-- 1. HERO SECTION -->
+    <section class="section-hero">
+        <div class="hero-image parallax-bg" style="background-image: url('{{ url_for('static', filename='hero_editorial.png') }}');"></div>
+        <div class="hero-overlay"></div>
+        
+        <div class="hero-content reveal">
+            <h1 class="headline-serif">Predictable<br><em>Power.</em></h1>
+            <p class="hero-subtext">AI-driven solar forecasting for the off-grid home.</p>
+            <a href="#section-tool" class="hero-btn">Start Forecasting</a>
+        </div>
+    </section>
+
+
+    <!-- 3. THE TOOL SECTION -->
+    <section id="section-tool" class="section-tool">
+        <div class="tool-bg parallax-bg" style="background-image: url('{{ url_for('static', filename='tool_bg.png') }}');"></div>
+        
+        <div class="tool-container reveal-up">
+            <!-- Added VanillaTilt data attributes for 3D tilt interaction -->
+            <div class="tool-panel" data-tilt data-tilt-max="3" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.1">
+                <div class="tool-header">
+                    <h3>Live Forecaster</h3>
+                    <p>Input current conditions to model instantaneous output.</p>
+                </div>
+                
+                <form id="prediction-form" class="premium-form">
+                    <div class="input-grid">
+                        
+                        <div class="input-group">
+                            <label for="ambient_temp">Ambient Temp (°C)</label>
+                            <input type="number" id="ambient_temp" name="ambient_temp" step="0.1" required placeholder="25.0">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="module_temp">Module Temp (°C)</label>
+                            <input type="number" id="module_temp" name="module_temp" step="0.1" required placeholder="28.0">
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label for="irradiation" class="flex-label">
+                                <span>Irradiation Level</span>
+                                <span class="val-display" id="irradiation-val">0.50</span>
+                            </label>
+                            <div class="light-meter">
+                                <input type="range" id="irradiation" name="irradiation" min="0" max="1.2" step="0.01" value="0.5">
+                                <div class="meter-fill" id="meter-fill"></div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="hour">Time (Hour)</label>
+                            <select id="hour" name="hour" required>
+                                <script>for(let i=0; i<=23; i++) document.write(`<option value="${i}">${i.toString().padStart(2, '0')}:00</option>`);</script>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="day">Day</label>
+                            <select id="day" name="day" required>
+                                <script>for(let i=1; i<=31; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group full-width">
+                            <label for="month">Month</label>
+                            <select id="month" name="month" required>
+                                <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+                                <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+                                <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+                                <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Magnetic Button Area -->
+                    <div class="magnetic-wrapper" id="magnetic-btn-wrapper">
+                        <button type="submit" id="submit-btn" class="btn-editorial">
+                            <span class="btn-text">Generate Forecast</span>
+                            <div class="btn-glow"></div>
+                        </button>
+                    </div>
+                    <div id="error-message" class="error-text hidden"></div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. RESULTS REVEAL -->
+    <section id="section-results" class="section-results hidden">
+        <div class="results-container">
+            
+            <div class="result-hero reveal-up">
+                <div class="energy-icon-container">
+                    <svg id="energy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path></svg>
+                </div>
+                <div class="number-wrapper">
+                    <span id="power-output" class="dramatic-number">0</span>
+                    <span class="unit-serif">kW</span>
+                </div>
+                <p id="status-message" class="editorial-status">Modeling complete.</p>
+            </div>
+
+            <!-- Asymmetric Stat Cards with Tilt -->
+            <div class="editorial-stats">
+                <div class="stat-card card-tall reveal-up" data-tilt data-tilt-max="5" data-tilt-glare="true" data-tilt-max-glare="0.2" style="transition-delay: 0.1s;">
+                    <div class="stat-bg texture-1"></div>
+                    <h5>Peak Sunlight</h5>
+                    <p id="stat-peak-hour" class="stat-val">--:--</p>
+                    <span class="stat-caption">Optimal generation time</span>
+                </div>
+                <div class="stat-card card-wide reveal-up" data-tilt data-tilt-max="5" data-tilt-glare="true" data-tilt-max-glare="0.2" style="transition-delay: 0.2s;">
+                    <div class="stat-bg texture-2"></div>
+                    <h5>Battery Protocol</h5>
+                    <p id="stat-battery" class="stat-val">--</p>
+                    <span class="stat-caption">Recommended action based on yield</span>
+                </div>
+                <div class="stat-card card-small reveal-up" data-tilt data-tilt-max="5" data-tilt-glare="true" data-tilt-max-glare="0.2" style="transition-delay: 0.3s;">
+                    <div class="stat-bg texture-3"></div>
+                    <h5>Efficiency</h5>
+                    <p id="stat-efficiency" class="stat-val">--</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- 5. CHART SECTION -->
+    <section id="section-chart" class="section-chart hidden">
+        <div class="chart-container reveal-up">
+            <h3 class="chart-title">24-Hour Yield Curve</h3>
+            <div class="chart-wrapper">
+                <canvas id="predictionChart"></canvas>
+                <div class="chart-underglow"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. CLOSING SECTION -->
+    <footer class="section-closing">
+        <div class="closing-image parallax-bg" style="background-image: url('{{ url_for('static', filename='closing_home.png') }}');"></div>
+        <div class="closing-overlay"></div>
+        <div class="closing-content reveal">
+            <h2>Power you can plan around.</h2>
+            <p>Smarter forecasting. Better battery life.</p>
+        </div>
+    </footer>
+
+    <!-- LOGIC -->
+    <script>
+        // Interactive Elements & Init
+        window.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            document.getElementById('hour').value = now.getHours();
+            document.getElementById('day').value = now.getDate();
+            document.getElementById('month').value = now.getMonth() + 1;
+            updateLightMeter();
+            initObservers();
+            initInteractiveEffects();
+        });
+
+        // 1. Custom Light Meter Slider
+        const slider = document.getElementById('irradiation');
+        const meterFill = document.getElementById('meter-fill');
+        const valDisplay = document.getElementById('irradiation-val');
+
+        function updateLightMeter() {
+            const val = parseFloat(slider.value);
+            valDisplay.textContent = val.toFixed(2);
+            meterFill.style.width = ((val / 1.2) * 100) + '%';
+        }
+        slider.addEventListener('input', updateLightMeter);
+
+        // 2. Interactive Effects (Cursor Glow, Magnetic Button, Parallax JS)
+        function initInteractiveEffects() {
+            // Cursor Glow
+            const glow = document.getElementById('cursor-glow');
+            window.addEventListener('mousemove', (e) => {
+                glow.style.transform = `translate(${e.clientX - 150}px, ${e.clientY - 150}px)`;
+            });
+
+            // Magnetic Button
+            const magneticBtn = document.querySelector('.btn-editorial');
+            const wrapper = document.getElementById('magnetic-btn-wrapper');
+            
+            wrapper.addEventListener('mousemove', (e) => {
+                const position = wrapper.getBoundingClientRect();
+                const x = e.clientX - position.left - position.width / 2;
+                const y = e.clientY - position.top - position.height / 2;
+                
+                magneticBtn.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
+            });
+            
+            wrapper.addEventListener('mouseout', () => {
+                magneticBtn.style.transform = `translate(0px, 0px)`;
+            });
+
+            // JS Parallax (smoother than CSS background-attachment)
+            const parallaxEls = document.querySelectorAll('.parallax-bg');
+            window.addEventListener('scroll', () => {
+                const scrolled = window.pageYOffset;
+                parallaxEls.forEach(el => {
+                    const speed = 0.4;
+                    // Only apply if the element is in the viewport to save performance
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top <= window.innerHeight && rect.bottom >= 0) {
+                        el.style.transform = `translateY(${scrolled * speed}px)`;
+                    }
+                });
+            });
+        }
+
+        // 3. Intersection Observer for scroll animations
+        function initObservers() {
+            const observerOptions = { root: null, rootMargin: '0px', threshold: 0.15 };
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.reveal, .reveal-up, .reveal-left, .reveal-right').forEach(el => {
+                observer.observe(el);
+            });
+            window.scrollObserver = observer;
+        }
+
+        // Form Submission
+        let powerChart = null;
+
+        document.getElementById('prediction-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submit-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const resultsSection = document.getElementById('section-results');
+            const chartSection = document.getElementById('section-chart');
+            const errorBanner = document.getElementById('error-message');
+            
+            const payload = {
+                ambient_temp: parseFloat(document.getElementById('ambient_temp').value),
+                module_temp: parseFloat(document.getElementById('module_temp').value),
+                irradiation: parseFloat(document.getElementById('irradiation').value),
+                hour: parseInt(document.getElementById('hour').value),
+                day: parseInt(document.getElementById('day').value),
+                month: parseInt(document.getElementById('month').value)
+            };
+
+            btn.disabled = true;
+            btnText.textContent = 'Modeling...';
+            errorBanner.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/predict_api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Server error');
+
+                resultsSection.classList.remove('hidden');
+                chartSection.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    resultsSection.querySelectorAll('.reveal-up').forEach(el => window.scrollObserver.observe(el));
+                    chartSection.querySelectorAll('.reveal-up').forEach(el => window.scrollObserver.observe(el));
+                    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
+
+                animateNumber(document.getElementById('power-output'), 0, data.predicted_power, 1500);
+                updateEnergyIcon(data.predicted_power);
+                
+                document.getElementById('status-message').textContent = data.status_message;
+                if (data.predicted_power <= 50) {
+                    document.getElementById('stat-battery').textContent = "Conserve";
+                    document.getElementById('stat-efficiency').textContent = "Low";
+                } else if (data.predicted_power <= 500) {
+                    document.getElementById('stat-battery').textContent = "Standard Load";
+                    document.getElementById('stat-efficiency').textContent = "Nominal";
+                } else {
+                    document.getElementById('stat-battery').textContent = "Charge Priority";
+                    document.getElementById('stat-efficiency').textContent = "Optimal";
+                }
+
+                let maxOutput = -1; let peakH = 12;
+                for(let i=0; i<data.hourly_predictions.length; i++) {
+                    if(data.hourly_predictions[i] > maxOutput) {
+                        maxOutput = data.hourly_predictions[i]; peakH = data.hours[i];
+                    }
+                }
+                document.getElementById('stat-peak-hour').textContent = `${peakH.toString().padStart(2, '0')}:00`;
+
+                renderEditorialChart(data.hours, data.hourly_predictions, payload.hour);
+
+            } catch (err) {
+                errorBanner.textContent = err.message;
+                errorBanner.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Generate Forecast';
+                btn.style.transform = 'translate(0px, 0px)'; // Reset magnetic
+            }
+        });
+
+        function animateNumber(obj, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 5);
+                obj.innerHTML = (easeOut * (end - start) + start).toFixed(1);
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function updateEnergyIcon(power) {
+            const icon = document.getElementById('energy-icon');
+            let intensity = Math.min(Math.max(power / 1000, 0.2), 1.0);
+            icon.style.opacity = intensity;
+            icon.style.filter = `drop-shadow(0 0 ${intensity * 20}px rgba(245,158,11, ${intensity}))`;
+            icon.style.color = intensity > 0.6 ? '#FCD34D' : '#94A3B8';
+        }
+
+        function renderEditorialChart(hours, predictions, currentHour) {
+            const ctx = document.getElementById('predictionChart').getContext('2d');
+            const labels = hours.map(h => {
+                const icon = (h >= 6 && h <= 18) ? '☀️' : '🌙';
+                return `${icon} ${h.toString().padStart(2, '0')}:00`;
+            });
+
+            if (powerChart) powerChart.destroy();
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)'); 
+            gradient.addColorStop(1, 'rgba(15, 23, 42, 0.0)'); 
+
+            powerChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'kW Output',
+                        data: predictions,
+                        borderColor: '#F59E0B',
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        pointBackgroundColor: 'transparent',
+                        pointBorderColor: 'transparent',
+                        pointHoverBackgroundColor: '#FCD34D',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4 
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            bodyColor: '#F59E0B',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { color: '#64748B', font: { family: 'Inter', size: 11 }, maxTicksLimit: 8 }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255, 255, 255, 0.03)', drawBorder: false },
+                            ticks: { color: '#64748B', font: { family: 'Inter' }, padding: 10 }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
